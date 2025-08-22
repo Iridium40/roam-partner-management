@@ -337,7 +337,6 @@ export default function BankingPayoutSetup({
               </Card>
             )}
           </div>
-          )}
 
           {/* Platform Payout Settings */}
           <div className="space-y-4">
