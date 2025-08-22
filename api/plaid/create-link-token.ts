@@ -96,14 +96,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       country_codes,
       language: "en" as const,
       webhook: process.env.PLAID_WEBHOOK_URL,
-      account_filters: account_filters || {
+      account_filters: {
         depository: {
           account_type:
             businessType === "sole_proprietorship" ? "personal" : "business",
           account_subtypes:
             businessType === "sole_proprietorship"
-              ? ["checking", "savings"]
-              : ["checking"],
+              ? ["checking", "savings"] as any
+              : ["checking"] as any,
         },
       },
     };

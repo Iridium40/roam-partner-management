@@ -44,7 +44,36 @@ export default function Phase2Entry() {
     console.log("Current URL:", window.location.href);
 
     const token = searchParams.get("token");
+    const testMode = searchParams.get("test");
     console.log("Token from URL:", token ? "Token present" : "No token found");
+    console.log("Test mode:", testMode);
+
+    // Allow test mode to bypass token validation
+    if (testMode === "true") {
+      console.log("Test mode enabled - bypassing token validation");
+      const testSessionData: Phase2SessionData = {
+        business_id: "test-business-id",
+        user_id: "test-user-id",
+        application_id: "test-application-id",
+        business_name: "Test Business",
+        validated_at: Date.now(),
+        progress: {}
+      };
+      
+      sessionStorage.setItem("phase2_session", JSON.stringify(testSessionData));
+      
+      // Redirect to welcome step
+      setTimeout(() => {
+        navigate(`/provider-onboarding/phase2/welcome`, {
+          replace: true,
+          state: {
+            validated: true,
+            businessName: "Test Business",
+          },
+        });
+      }, 1000);
+      return;
+    }
 
     if (!token) {
       console.error("No token found in URL parameters");

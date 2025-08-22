@@ -29,26 +29,6 @@ interface PersonalProfileData {
   professionalTitle: string;
   professionalBio: string;
   yearsExperience: number;
-  specialties: string[];
-  certifications: Array<{
-    id: string;
-    name: string;
-    issuer: string;
-    year: number;
-    expiryYear?: number;
-  }>;
-  education: Array<{
-    id: string;
-    degree: string;
-    institution: string;
-    year: number;
-  }>;
-  awards: Array<{
-    id: string;
-    name: string;
-    issuer: string;
-    year: number;
-  }>;
   socialLinks: {
     linkedin?: string;
     twitter?: string;
@@ -89,10 +69,6 @@ export default function PersonalProfileSetup({
     professionalTitle: initialData?.professionalTitle || '',
     professionalBio: initialData?.professionalBio || '',
     yearsExperience: initialData?.yearsExperience || 0,
-    specialties: initialData?.specialties || [],
-    certifications: initialData?.certifications || [],
-    education: initialData?.education || [],
-    awards: initialData?.awards || [],
     socialLinks: initialData?.socialLinks || {},
     avatarUrl: initialData?.avatarUrl,
     coverImageUrl: initialData?.coverImageUrl
@@ -112,7 +88,7 @@ export default function PersonalProfileSetup({
     uploaded: false
   });
 
-  const [newSpecialty, setNewSpecialty] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
@@ -168,80 +144,9 @@ export default function PersonalProfileSetup({
     }));
   };
 
-  const addSpecialty = () => {
-    if (newSpecialty.trim() && !formData.specialties.includes(newSpecialty.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        specialties: [...prev.specialties, newSpecialty.trim()]
-      }));
-      setNewSpecialty('');
-    }
-  };
 
-  const removeSpecialty = (specialty: string) => {
-    setFormData(prev => ({
-      ...prev,
-      specialties: prev.specialties.filter(s => s !== specialty)
-    }));
-  };
 
-  const addCertification = () => {
-    const newCert = {
-      id: Date.now().toString(),
-      name: '',
-      issuer: '',
-      year: new Date().getFullYear()
-    };
-    setFormData(prev => ({
-      ...prev,
-      certifications: [...prev.certifications, newCert]
-    }));
-  };
 
-  const updateCertification = (id: string, field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      certifications: prev.certifications.map(cert => 
-        cert.id === id ? { ...cert, [field]: value } : cert
-      )
-    }));
-  };
-
-  const removeCertification = (id: string) => {
-    setFormData(prev => ({
-      ...prev,
-      certifications: prev.certifications.filter(cert => cert.id !== id)
-    }));
-  };
-
-  const addEducation = () => {
-    const newEdu = {
-      id: Date.now().toString(),
-      degree: '',
-      institution: '',
-      year: new Date().getFullYear()
-    };
-    setFormData(prev => ({
-      ...prev,
-      education: [...prev.education, newEdu]
-    }));
-  };
-
-  const updateEducation = (id: string, field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      education: prev.education.map(edu => 
-        edu.id === id ? { ...edu, [field]: value } : edu
-      )
-    }));
-  };
-
-  const removeEducation = (id: string) => {
-    setFormData(prev => ({
-      ...prev,
-      education: prev.education.filter(edu => edu.id !== id)
-    }));
-  };
 
   const handleImageSelect = async (
     event: React.ChangeEvent<HTMLInputElement>,
@@ -445,15 +350,13 @@ export default function PersonalProfileSetup({
 
   const completionPercentage = () => {
     let completed = 0;
-    const total = 7; // title, bio, experience, avatar, cover, specialties, certifications
+    const total = 5; // title, bio, experience, avatar, cover
 
     if (formData.professionalTitle.trim()) completed++;
     if (formData.professionalBio.trim()) completed++;
     if (formData.yearsExperience > 0) completed++;
     if (formData.avatarUrl || avatarUpload.uploaded) completed++;
     if (formData.coverImageUrl || coverUpload.uploaded) completed++;
-    if (formData.specialties.length > 0) completed++;
-    if (formData.certifications.length > 0) completed++;
 
     return Math.round((completed / total) * 100);
   };
@@ -712,158 +615,9 @@ export default function PersonalProfileSetup({
             </div>
           </div>
 
-          {/* Specialties */}
-          <div className="space-y-4">
-            <Label className="text-base font-semibold">Specialties & Skills</Label>
-            <div className="flex gap-2">
-              <Input
-                value={newSpecialty}
-                onChange={(e) => setNewSpecialty(e.target.value)}
-                placeholder="Add a specialty (e.g., Deep Tissue, Swedish, Hot Stone)"
-                onKeyPress={(e) => e.key === 'Enter' && addSpecialty()}
-              />
-              <Button
-                type="button"
-                onClick={addSpecialty}
-                variant="outline"
-                disabled={!newSpecialty.trim()}
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-            
-            {formData.specialties.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {formData.specialties.map((specialty, index) => (
-                  <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                    {specialty}
-                    <button
-                      onClick={() => removeSpecialty(specialty)}
-                      className="ml-1 hover:text-red-500"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </div>
 
-          {/* Certifications */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label className="text-base font-semibold">Certifications</Label>
-              <Button
-                type="button"
-                onClick={addCertification}
-                variant="outline"
-                size="sm"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Certification
-              </Button>
-            </div>
-            
-            {formData.certifications.map((cert) => (
-              <Card key={cert.id} className="p-4">
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div>
-                    <Label>Certification Name</Label>
-                    <Input
-                      value={cert.name}
-                      onChange={(e) => updateCertification(cert.id, 'name', e.target.value)}
-                      placeholder="Certificate Name"
-                    />
-                  </div>
-                  <div>
-                    <Label>Issuing Organization</Label>
-                    <Input
-                      value={cert.issuer}
-                      onChange={(e) => updateCertification(cert.id, 'issuer', e.target.value)}
-                      placeholder="Organization"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <div className="flex-1">
-                      <Label>Year</Label>
-                      <Input
-                        type="number"
-                        value={cert.year}
-                        onChange={(e) => updateCertification(cert.id, 'year', parseInt(e.target.value))}
-                        placeholder="2023"
-                      />
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeCertification(cert.id)}
-                      className="self-end text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
 
-          {/* Education */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label className="text-base font-semibold">Education</Label>
-              <Button
-                type="button"
-                onClick={addEducation}
-                variant="outline"
-                size="sm"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Education
-              </Button>
-            </div>
-            
-            {formData.education.map((edu) => (
-              <Card key={edu.id} className="p-4">
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div>
-                    <Label>Degree/Program</Label>
-                    <Input
-                      value={edu.degree}
-                      onChange={(e) => updateEducation(edu.id, 'degree', e.target.value)}
-                      placeholder="Degree or Program"
-                    />
-                  </div>
-                  <div>
-                    <Label>Institution</Label>
-                    <Input
-                      value={edu.institution}
-                      onChange={(e) => updateEducation(edu.id, 'institution', e.target.value)}
-                      placeholder="School or Institution"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <div className="flex-1">
-                      <Label>Year</Label>
-                      <Input
-                        type="number"
-                        value={edu.year}
-                        onChange={(e) => updateEducation(edu.id, 'year', parseInt(e.target.value))}
-                        placeholder="2023"
-                      />
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeEducation(edu.id)}
-                      className="self-end text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+
 
           {/* Professional Social Links */}
           <div className="space-y-4">

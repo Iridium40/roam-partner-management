@@ -30,7 +30,7 @@ import {
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import GoogleOneTap from "@/components/GoogleOneTap";
-import InstagramFeed from "@/components/InstagramFeed";
+// import InstagramFeed from "@/components/InstagramFeed";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -358,6 +358,15 @@ export default function LandingPage() {
               />
               <span className="text-2xl font-semibold text-roam-blue">Services</span>
             </div>
+            {/* Mobile Provider Button */}
+            <div className="md:hidden">
+              <Link
+                to="/become-a-provider"
+                className="bg-roam-yellow text-roam-blue hover:bg-roam-yellow/90 px-3 py-2 rounded-lg font-semibold transition-colors text-sm"
+              >
+                Become a Provider
+              </Link>
+            </div>
             <nav className="hidden md:flex items-center space-x-8">
               <a
                 href="#features"
@@ -378,10 +387,16 @@ export default function LandingPage() {
                 Reviews
               </a>
               <Link
-                to="/home"
+                to="/provider-portal"
                 className="text-roam-blue hover:text-roam-blue/80 transition-colors font-medium"
               >
-                Browse Services
+                Join Today
+              </Link>
+              <Link
+                to="/become-a-provider"
+                className="bg-roam-yellow text-roam-blue hover:bg-roam-yellow/90 px-4 py-2 rounded-lg font-semibold transition-colors"
+              >
+                Become a Provider
               </Link>
             </nav>
           </div>
@@ -428,8 +443,8 @@ export default function LandingPage() {
                 size="lg"
                 className="bg-roam-blue hover:bg-roam-blue/90 text-white px-8 py-4 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
               >
-                <Link to="/home" className="flex items-center gap-2">
-                  Book Today
+                <Link to="/provider-portal" className="flex items-center gap-2">
+                  Join Today
                   <ArrowRight className="w-5 h-5" />
                 </Link>
               </Button>
@@ -441,6 +456,131 @@ export default function LandingPage() {
         <div className="absolute top-20 left-10 w-20 h-20 bg-roam-yellow/20 rounded-full blur-xl animate-pulse"></div>
         <div className="absolute bottom-20 right-10 w-32 h-32 bg-roam-light-blue/20 rounded-full blur-xl animate-pulse delay-1000"></div>
         <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-roam-blue/10 rounded-full blur-lg animate-pulse delay-500"></div>
+      </section>
+
+      {/* Provider Onboarding Section */}
+      <section className="py-20 lg:py-32 bg-gradient-to-r from-roam-yellow/10 to-roam-light-blue/10">
+        <div className="container mx-auto px-6">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              {/* Left Side - Content */}
+              <div>
+                <div className="mb-6">
+                  <Badge className="bg-roam-yellow text-roam-blue font-semibold px-4 py-2 text-sm">
+                    FOR PROVIDERS
+                  </Badge>
+                </div>
+                <h2 className="text-4xl lg:text-5xl font-bold text-foreground mb-6">
+                  Join Our Network of Professional Service Providers
+                </h2>
+                <p className="text-xl text-foreground/70 mb-8 leading-relaxed">
+                  Expand your business reach and connect with customers who need your expertise. 
+                  Whether you're a beauty professional, fitness trainer, therapist, or healthcare provider, 
+                  ROAM helps you grow your client base and increase your earnings.
+                </p>
+                
+                <div className="space-y-4 mb-8">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-6 h-6 text-roam-blue" />
+                    <span className="text-foreground/80">Flexible scheduling and location options</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-6 h-6 text-roam-blue" />
+                    <span className="text-foreground/80">Secure payment processing and instant payouts</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-6 h-6 text-roam-blue" />
+                    <span className="text-foreground/80">Professional profile and marketing support</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-6 h-6 text-roam-blue" />
+                    <span className="text-foreground/80">Customer management and booking tools</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Button
+                    asChild
+                    size="lg"
+                    className="bg-roam-blue hover:bg-roam-blue/90 text-white px-8 py-4 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+                  >
+                    <Link to="/become-a-provider" className="flex items-center gap-2">
+                      Start Onboarding
+                      <ArrowRight className="w-5 h-5" />
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    size="lg"
+                    variant="outline"
+                    className="border-roam-blue text-roam-blue hover:bg-roam-blue hover:text-white px-8 py-4 text-lg font-semibold transition-all duration-300"
+                  >
+                    <Link to="/provider-portal" className="flex items-center gap-2">
+                      Provider Portal
+                      <ExternalLink className="w-5 h-5" />
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Right Side - Stats & Features */}
+              <div className="space-y-8">
+                {/* Stats Cards */}
+                <div className="grid grid-cols-2 gap-4">
+                  <Card className="bg-white/80 backdrop-blur-sm border-roam-blue/20">
+                    <CardContent className="p-6 text-center">
+                      <div className="text-3xl font-bold text-roam-blue mb-2">$2,500+</div>
+                      <div className="text-sm text-foreground/70">Average Monthly Earnings</div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-white/80 backdrop-blur-sm border-roam-blue/20">
+                    <CardContent className="p-6 text-center">
+                      <div className="text-3xl font-bold text-roam-blue mb-2">95%</div>
+                      <div className="text-sm text-foreground/70">Provider Satisfaction</div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-white/80 backdrop-blur-sm border-roam-blue/20">
+                    <CardContent className="p-6 text-center">
+                      <div className="text-3xl font-bold text-roam-blue mb-2">24/7</div>
+                      <div className="text-sm text-foreground/70">Support Available</div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-white/80 backdrop-blur-sm border-roam-blue/20">
+                    <CardContent className="p-6 text-center">
+                      <div className="text-3xl font-bold text-roam-blue mb-2">500+</div>
+                      <div className="text-sm text-foreground/70">Active Providers</div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Provider Types */}
+                <Card className="bg-white/80 backdrop-blur-sm border-roam-blue/20">
+                  <CardContent className="p-6">
+                    <h3 className="text-xl font-semibold text-foreground mb-4">Perfect For:</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex items-center gap-2">
+                        <Scissors className="w-4 h-4 text-roam-blue" />
+                        <span className="text-sm">Beauty Professionals</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Dumbbell className="w-4 h-4 text-roam-blue" />
+                        <span className="text-sm">Fitness Trainers</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Stethoscope className="w-4 h-4 text-roam-blue" />
+                        <span className="text-sm">Healthcare Providers</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Hand className="w-4 h-4 text-roam-blue" />
+                        <span className="text-sm">Therapists</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Service Explorer */}
@@ -521,12 +661,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Instagram Feed */}
-      <section className="py-20 lg:py-32 bg-gradient-to-br from-roam-light-blue/10 to-roam-yellow/10">
-        <div className="container mx-auto px-6">
-          <InstagramFeed />
-        </div>
-      </section>
+
 
       {/* Testimonials */}
       <section
@@ -595,8 +730,8 @@ export default function LandingPage() {
               variant="secondary"
               className="bg-white text-roam-blue hover:bg-white/90 px-8 py-4 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
             >
-              <Link to="/home" className="flex items-center gap-2">
-                Book Your First Service
+              <Link to="/provider-portal" className="flex items-center gap-2">
+                Join Today
                 <Calendar className="w-5 h-5" />
               </Link>
             </Button>

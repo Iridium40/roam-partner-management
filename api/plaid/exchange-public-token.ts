@@ -95,7 +95,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Get institution information
     const institutionResponse = await client.institutionsGetById({
       institution_id: metadata.institution.institution_id,
-      country_codes: ["US"],
+      country_codes: ["US" as any],
     });
 
     const institution = institutionResponse.data.institution;
@@ -127,8 +127,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       account_type: selectedAccount.type,
       account_subtype: selectedAccount.subtype,
       verification_status: "verified",
-      routing_numbers: accountAuth.numbers.ach?.map((ach) => ach.routing) || [],
-      account_number_mask: accountAuth.numbers.ach?.[0]?.account || "",
+      routing_numbers: (accountAuth as any).numbers?.ach?.map((ach: any) => ach.routing) || [],
+      account_number_mask: (accountAuth as any).numbers?.ach?.[0]?.account || "",
       connected_at: new Date().toISOString(),
       is_active: true,
     };

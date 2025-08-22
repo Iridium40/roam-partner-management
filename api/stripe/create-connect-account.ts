@@ -3,7 +3,7 @@ import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-11-20.acacia",
+  apiVersion: "2025-07-30.basil",
 });
 
 const supabase = createClient(
@@ -145,7 +145,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             ? "limited_liability_company"
             : businessType === "corporation"
               ? "corporation"
-              : "partnership",
+              : "partnership" as any,
       };
 
       if (taxInfo.business_tax_id) {

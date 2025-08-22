@@ -9,6 +9,11 @@ import { ArrowLeft, TestTube2 } from "lucide-react";
 import WelcomeBackStep from "@/components/WelcomeBackStep";
 import BusinessProfileSetup from "@/components/Phase2Components/BusinessProfileSetup";
 import PersonalProfileSetup from "@/components/Phase2Components/PersonalProfileSetup";
+import BusinessHoursSetup from "@/components/Phase2Components/BusinessHoursSetup";
+import StaffManagementSetup from "@/components/Phase2Components/StaffManagementSetup";
+import BankingPayoutSetup from "@/components/Phase2Components/BankingPayoutSetup";
+import ServicePricingSetup from "@/components/Phase2Components/ServicePricingSetup";
+import FinalReviewSetup from "@/components/Phase2Components/FinalReviewSetup";
 
 type Phase2Step =
   | "overview"
@@ -213,6 +218,116 @@ export default function Phase2Test() {
               education: [],
               awards: [],
               socialLinks: {},
+            }}
+          />
+        );
+
+      case "business_hours":
+        return (
+          <BusinessHoursSetup
+            businessId={testBusinessId}
+            userId={testUserId}
+            onComplete={() => handleStepComplete("staff_management")}
+            onBack={handleBack}
+            initialData={{
+              monday: { isOpen: true, openTime: '09:00', closeTime: '17:00' },
+              tuesday: { isOpen: true, openTime: '09:00', closeTime: '17:00' },
+              wednesday: { isOpen: true, openTime: '09:00', closeTime: '17:00' },
+              thursday: { isOpen: true, openTime: '09:00', closeTime: '17:00' },
+              friday: { isOpen: true, openTime: '09:00', closeTime: '17:00' },
+              saturday: { isOpen: false, openTime: '09:00', closeTime: '17:00' },
+              sunday: { isOpen: false, openTime: '09:00', closeTime: '17:00' }
+            }}
+          />
+        );
+
+      case "staff_management":
+        return (
+          <StaffManagementSetup
+            businessId={testBusinessId}
+            userId={testUserId}
+            businessType="business"
+            onComplete={() => handleStepComplete("banking_payout")}
+            onBack={handleBack}
+            initialData={[
+              {
+                id: "1",
+                first_name: "John",
+                last_name: "Doe",
+                email: "john@example.com",
+                phone: "(555) 123-4567",
+                provider_role: "provider",
+                bio: "Experienced service provider",
+                experience_years: 3,
+                verification_status: "approved",
+                is_active: true,
+              }
+            ]}
+          />
+        );
+
+      case "banking_payout":
+        return (
+          <BankingPayoutSetup
+            businessId={testBusinessId}
+            userId={testUserId}
+            onComplete={() => handleStepComplete("service_pricing")}
+            onBack={handleBack}
+            initialData={{
+              stripeConnected: true,
+              plaidConnected: true,
+              bankAccount: {
+                account_id: "test_account_123",
+                mask: "1234",
+                name: "Test Checking Account",
+                type: "depository",
+                institution_name: "Test Bank",
+              }
+            }}
+          />
+        );
+
+      case "service_pricing":
+        return (
+          <ServicePricingSetup
+            businessId={testBusinessId}
+            userId={testUserId}
+            onComplete={() => handleStepComplete("final_review")}
+            onBack={handleBack}
+            initialData={{
+              services: [
+                {
+                  id: "1",
+                  name: "Deep Cleaning",
+                  description: "Comprehensive cleaning service",
+                  basePrice: 150,
+                  duration: 120,
+                  category: "cleaning",
+                  isActive: true,
+                }
+              ],
+              pricingModel: 'fixed',
+              currency: 'USD',
+              taxRate: 8.5,
+              cancellationPolicy: '24-hour notice required',
+            }}
+          />
+        );
+
+      case "final_review":
+        return (
+          <FinalReviewSetup
+            businessId={testBusinessId}
+            userId={testUserId}
+            onComplete={() => handleStepComplete("overview")}
+            onBack={handleBack}
+            phase2Data={{
+              business_profile: { businessName: "Cary's Care Wash" },
+              personal_profile: { professionalTitle: "Car Wash Specialist" },
+              business_hours: { monday: { isOpen: true }, tuesday: { isOpen: true } },
+              staff_management: [{ id: "1", first_name: "John", last_name: "Doe" }],
+              banking_payout: { payoutMethod: "stripe_connect" },
+              service_pricing: { services: [{ id: "1", name: "Deep Cleaning" }] },
             }}
           />
         );

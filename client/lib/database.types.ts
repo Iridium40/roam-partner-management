@@ -434,7 +434,7 @@ export type Database = {
         Row: {
           id: string;
           business_id: string;
-          document_type: string;
+          document_type: BusinessDocumentType;
           document_name: string;
           file_url: string;
           file_size_bytes: number | null;
@@ -448,7 +448,7 @@ export type Database = {
         Insert: {
           id?: string;
           business_id: string;
-          document_type: string;
+          document_type: BusinessDocumentType;
           document_name: string;
           file_url: string;
           file_size_bytes?: number | null;
@@ -461,8 +461,7 @@ export type Database = {
         };
         Update: {
           id?: string;
-          provider_id?: string;
-          document_type?: string;
+          document_type?: BusinessDocumentType;
           document_name?: string;
           file_url?: string;
           file_size_bytes?: number | null;
@@ -1121,7 +1120,14 @@ export type VerificationStatus =
   | "requires_more_info";
 export type ProviderVerificationStatus = "pending" | "approved" | "rejected";
 export type BackgroundCheckStatus = "under_review" | "passed" | "failed";
-export type DocumentVerificationStatus = "pending" | "approved" | "rejected";
+export type DocumentVerificationStatus = "pending" | "verified" | "rejected" | "under_review";
+export type BusinessDocumentType = 
+  | "drivers_license"
+  | "proof_of_address"
+  | "liability_insurance"
+  | "professional_license"
+  | "professional_certificate"
+  | "business_license";
 export type SubscriptionStatus = "trial" | "active" | "past_due" | "cancelled";
 export type DeliveryType = "business_location" | "mobile" | "virtual";
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";

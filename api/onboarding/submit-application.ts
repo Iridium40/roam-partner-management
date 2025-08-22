@@ -100,18 +100,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log("Checking documents for businessId:", businessId);
 
     // Query documents by business_id only (no provider_id column exists)
+    console.log("=== DOCUMENT QUERY DEBUG ===");
+    console.log("Querying documents for businessId:", businessId);
+    console.log("Querying documents for userId:", userId);
+    
     const { data: documentsByBusiness, error: documentsError1 } = await supabase
       .from("business_documents")
-      .select("document_type, verification_status, business_id")
+      .select("*")
       .eq("business_id", businessId);
 
     console.log("Documents query error:", documentsError1);
+    console.log("Documents query result:", documentsByBusiness);
+
+    // Also try querying all documents to see what's in the table
+    const { data: allDocuments, error: allDocsError } = await supabase
+      .from("business_documents")
+      .select("*")
+      .limit(10);
+    
+    console.log("All documents in table (first 10):", allDocuments);
+    console.log("All documents query error:", allDocsError);
 
     // No need to query by user since there's no user/provider column
     const documentsByUser = null;
     const documentsError2 = null;
-
-    console.log("Documents by business_id:", documentsByBusiness);
 
     if (documentsError1)
       console.error("Error querying documents by business:", documentsError1);
@@ -128,10 +140,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       documents?.map((d) => ({
         type: d.document_type,
         status: d.verification_status,
+        id: d.id,
+        business_id: d.business_id,
       })),
     );
 
     console.log("Uploaded document types:", uploadedTypes);
+    console.log("Document types found in database:", documents?.map(d => d.document_type));
 
     const requiredTypes = [
       "drivers_license",

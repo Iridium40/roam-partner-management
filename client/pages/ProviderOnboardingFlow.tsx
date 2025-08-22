@@ -30,6 +30,11 @@ import StripeIdentityVerification from "@/components/StripeIdentityVerification"
 import { PlaidBankConnection } from "@/components/PlaidBankConnection";
 import { StripeConnectSetup } from "@/components/StripeConnectSetup";
 import WelcomeBackStep from "@/components/WelcomeBackStep";
+import BusinessHoursSetup from "@/components/Phase2Components/BusinessHoursSetup";
+import StaffManagementSetup from "@/components/Phase2Components/StaffManagementSetup";
+import BankingPayoutSetup from "@/components/Phase2Components/BankingPayoutSetup";
+import ServicePricingSetup from "@/components/Phase2Components/ServicePricingSetup";
+import FinalReviewSetup from "@/components/Phase2Components/FinalReviewSetup";
 import { useAuth } from "@/contexts/AuthContext";
 
 type OnboardingPhase = "phase1" | "phase2" | "complete";
@@ -84,6 +89,14 @@ const phase2Steps = [
   { id: "service_pricing", title: "Service Pricing", icon: DollarSign },
   { id: "final_review", title: "Final Review", icon: CheckCircle },
 ];
+
+// Get filtered Phase 2 steps based on business type
+const getPhase2Steps = (businessType?: string) => {
+  if (businessType === 'independent') {
+    return phase2Steps.filter(step => step.id !== 'staff_management');
+  }
+  return phase2Steps;
+};
 
 export default function ProviderOnboardingFlow() {
   const location = useLocation();
@@ -519,6 +532,18 @@ export default function ProviderOnboardingFlow() {
   };
 
   const handlePhase2StepComplete = (nextStep: Phase2Step) => {
+    // If next step is staff_management but business type is independent, skip to banking_payout
+    if (nextStep === 'staff_management' && onboardingState.businessData?.business_type === 'independent') {
+      navigate('/provider-onboarding/phase2/banking_payout');
+      return;
+    }
+    
+    // If current step is staff_management and business type is independent, skip to banking_payout
+    if (onboardingState.phase2Step === 'staff_management' && onboardingState.businessData?.business_type === 'independent') {
+      navigate('/provider-onboarding/phase2/banking_payout');
+      return;
+    }
+    
     navigate(`/provider-onboarding/phase2/${nextStep}`);
   };
 
@@ -758,87 +783,72 @@ export default function ProviderOnboardingFlow() {
 
       case "business_hours":
         return (
-          <Card className="max-w-2xl mx-auto text-center">
-            <CardHeader>
-              <CardTitle className="text-2xl text-roam-blue">
-                Business Hours Setup
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>Business hours component coming soon...</p>
-              <Button onClick={() => handlePhase2StepComplete("staff_management")} className="mt-4">
-                Continue
-              </Button>
-            </CardContent>
-          </Card>
+          <BusinessHoursSetup
+            businessId={onboardingState.businessId || ""}
+            userId={onboardingState.userId || ""}
+            onComplete={() => {
+              // Skip staff management for independent businesses
+              if (onboardingState.businessData?.business_type === 'independent') {
+                handlePhase2StepComplete("banking_payout");
+              } else {
+                handlePhase2StepComplete("staff_management");
+              }
+            }}
+            onBack={() => handlePhase2StepComplete("personal_profile")}
+            initialData={onboardingState.businessData?.business_hours}
+          />
         );
 
       case "staff_management":
         return (
-          <Card className="max-w-2xl mx-auto text-center">
-            <CardHeader>
-              <CardTitle className="text-2xl text-roam-blue">
-                Staff Management
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>Staff management component coming soon...</p>
-              <Button onClick={() => handlePhase2StepComplete("banking_payout")} className="mt-4">
-                Continue
-              </Button>
-            </CardContent>
-          </Card>
+          <StaffManagementSetup
+            businessId={onboardingState.businessId || ""}
+            userId={onboardingState.userId || ""}
+            businessType={onboardingState.businessData?.business_type}
+            onComplete={() => handlePhase2StepComplete("banking_payout")}
+            onBack={() => handlePhase2StepComplete("business_hours")}
+            initialData={onboardingState.businessData?.staff_members}
+          />
         );
 
       case "banking_payout":
         return (
-          <Card className="max-w-2xl mx-auto text-center">
-            <CardHeader>
-              <CardTitle className="text-2xl text-roam-blue">
-                Banking & Payouts
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>Banking and payout component coming soon...</p>
-              <Button onClick={() => handlePhase2StepComplete("service_pricing")} className="mt-4">
-                Continue
-              </Button>
-            </CardContent>
-          </Card>
+          <BankingPayoutSetup
+            businessId={onboardingState.businessId || ""}
+            userId={onboardingState.userId || ""}
+            onComplete={() => handlePhase2StepComplete("service_pricing")}
+            onBack={() => {
+              // Go back to business_hours if staff management was skipped
+              if (onboardingState.businessData?.business_type === 'independent') {
+                handlePhase2StepComplete("business_hours");
+              } else {
+                handlePhase2StepComplete("staff_management");
+              }
+            }}
+            initialData={onboardingState.businessData?.banking_payout}
+          />
         );
 
       case "service_pricing":
         return (
-          <Card className="max-w-2xl mx-auto text-center">
-            <CardHeader>
-              <CardTitle className="text-2xl text-roam-blue">
-                Service Pricing
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>Service pricing component coming soon...</p>
-              <Button onClick={() => handlePhase2StepComplete("final_review")} className="mt-4">
-                Continue
-              </Button>
-            </CardContent>
-          </Card>
+          <ServicePricingSetup
+            businessId={onboardingState.businessId || ""}
+            userId={onboardingState.userId || ""}
+            onComplete={() => handlePhase2StepComplete("final_review")}
+            onBack={() => handlePhase2StepComplete("banking_payout")}
+            initialData={onboardingState.businessData?.service_pricing}
+          />
         );
 
       case "final_review":
         return (
-          <Card className="max-w-2xl mx-auto text-center">
-            <CardHeader>
-              <CardTitle className="text-2xl text-roam-blue">
-                Final Review
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>Final review component coming soon...</p>
-              <Button onClick={handlePhase2Complete} className="mt-4">
-                Complete Setup
-              </Button>
-            </CardContent>
-          </Card>
+          <FinalReviewSetup
+            businessId={onboardingState.businessId || ""}
+            userId={onboardingState.userId || ""}
+            onComplete={() => handlePhase2StepComplete("complete")}
+            onBack={() => handlePhase2StepComplete("service_pricing")}
+            phase2Data={onboardingState.businessData || {}}
+          />
         );
 
       case "identity_verification":

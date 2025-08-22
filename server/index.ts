@@ -15,6 +15,12 @@ export function createServer() {
   app.use(cors());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+  
+  // Disable body parsing for file uploads - let multer handle it
+  app.use('/api/onboarding/upload-documents', (req, res, next) => {
+    console.log("Local server: Disabling body parser for upload-documents");
+    next();
+  });
 
   // Example API routes
   app.get("/api/ping", (_req, res) => {
@@ -71,6 +77,10 @@ export function createServer() {
   // Upload documents route
   app.post("/api/onboarding/upload-documents", async (req, res) => {
     try {
+      console.log("Local server: Upload documents route called");
+      console.log("Request headers:", req.headers);
+      console.log("Request body keys:", Object.keys(req.body || {}));
+      
       const uploadHandler = await import("../api/onboarding/upload-documents");
       await uploadHandler.default(req, res);
     } catch (error) {

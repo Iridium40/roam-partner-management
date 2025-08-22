@@ -23,6 +23,7 @@ declare global {
 import ProviderPortal from "./pages/ProviderPortal";
 import ProviderDashboard from "./pages/ProviderDashboard";
 import ProviderOnboardingFlow from "./pages/ProviderOnboardingFlow";
+import LandingPage from "./pages/LandingPage";
 import ErrorBoundary from "./components/ErrorBoundary";
 import NotFound from "./pages/NotFound";
 import SignIn from "./pages/SignIn";
@@ -41,11 +42,9 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            {/* Redirect root to provider portal */}
-            <Route
-              path="/"
-              element={<Navigate to="/provider-portal" replace />}
-            />
+            {/* Landing Page */}
+            <Route path="/" element={<Navigate to="/landing" replace />} />
+            <Route path="/landing" element={<LandingPage />} />
 
             {/* Provider Portal Authentication */}
             <Route path="/sign-in" element={<SignIn />} />
@@ -113,6 +112,16 @@ const App = () => (
             {/* Provider Onboarding Flow - New comprehensive system */}
             <Route
               path="/provider-onboarding"
+              element={
+                <ErrorBoundary>
+                  <ProviderOnboardingFlow />
+                </ErrorBoundary>
+              }
+            />
+            
+            {/* Alternative onboarding route for easier access */}
+            <Route
+              path="/become-a-provider"
               element={
                 <ErrorBoundary>
                   <ProviderOnboardingFlow />

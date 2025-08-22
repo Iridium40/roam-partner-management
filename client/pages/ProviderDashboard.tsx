@@ -2977,12 +2977,14 @@ export default function ProviderDashboard() {
               >
                 Services
               </button>
-              <button
-                onClick={() => setActiveTab("staff")}
-                className={`text-sm font-medium px-3 py-2 rounded-lg ${activeTab === "staff" ? "bg-gray-100 text-gray-900" : "text-gray-600 hover:text-gray-900"}`}
-              >
-                Staff
-              </button>
+              {businessSettings.business_type !== "Independent" && (
+                <button
+                  onClick={() => setActiveTab("staff")}
+                  className={`text-sm font-medium px-3 py-2 rounded-lg ${activeTab === "staff" ? "bg-gray-100 text-gray-900" : "text-gray-600 hover:text-gray-900"}`}
+                >
+                  Staff
+                </button>
+              )}
               <button
                 onClick={() => setActiveTab("financials")}
                 className={`text-sm font-medium px-3 py-2 rounded-lg ${activeTab === "financials" ? "bg-gray-100 text-gray-900" : "text-gray-600 hover:text-gray-900"}`}
@@ -3352,7 +3354,7 @@ export default function ProviderDashboard() {
                     <Briefcase className="w-5 h-5 text-orange-600" />
                   </div>
                 </div>
-                <p className="text-xs text-blue-600 mt-2">Auto payout: Weekly</p>
+                <p className="text-xs text-blue-600 mt-2">Auto payout: Every Friday</p>
               </Card>
             </div>
 
@@ -3618,22 +3620,22 @@ export default function ProviderDashboard() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
                       <div>
-                        <p className="text-sm text-gray-600 mb-2">Stripe Connect</p>
+                        <p className="text-sm text-gray-600 mb-2">Payment Processing</p>
                         <div className="flex items-center space-x-2">
                           <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
-                            Connected
+                            Stripe Connect
                           </Badge>
                           <span className="text-sm text-gray-600">•••• •��•• •••• 4532</span>
                         </div>
                       </div>
 
                       <div>
-                        <p className="text-sm text-gray-600 mb-2">Plaid Link</p>
+                        <p className="text-sm text-gray-600 mb-2">Bank Account</p>
                         <div className="flex items-center space-x-2">
                           <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">
-                            Verified
+                            Connected
                           </Badge>
-                          <span className="text-sm text-gray-600">Bank verification</span>
+                          <span className="text-sm text-gray-600">•••• 1234 via Plaid</span>
                         </div>
                       </div>
                     </div>
@@ -3648,6 +3650,66 @@ export default function ProviderDashboard() {
                         <Settings className="w-4 h-4 mr-2" />
                         Manage Payout
                       </Button>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Platform Payout Settings */}
+                <Card className="p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Platform Payout Settings</h3>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <Calendar className="w-4 h-4 text-blue-600" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-blue-900">Payout Schedule</h4>
+                            <p className="text-sm text-blue-800">Every Friday</p>
+                          </div>
+                        </div>
+                        <p className="text-xs text-blue-700">
+                          Payouts are automatically processed every Friday for all providers
+                        </p>
+                      </div>
+
+                      <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                            <DollarSign className="w-4 h-4 text-green-600" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-green-900">Minimum Payout</h4>
+                            <p className="text-sm text-green-800">$25 minimum</p>
+                          </div>
+                        </div>
+                        <p className="text-xs text-green-700">
+                          Platform-controlled minimum amount for payout processing
+                        </p>
+                      </div>
+
+                      <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                            <CheckCircle className="w-4 h-4 text-purple-600" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-purple-900">Automatic Payouts</h4>
+                            <p className="text-sm text-purple-800">Enabled by default</p>
+                          </div>
+                        </div>
+                        <p className="text-xs text-purple-700">
+                          All providers receive automatic payouts every Friday
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                      <p className="text-sm text-gray-700">
+                        <strong>Note:</strong> These payout settings are controlled at the platform level to ensure consistent processing for all providers. 
+                        You cannot modify these settings, but you can view your payout history and manage your connected accounts.
+                      </p>
                     </div>
                   </div>
                 </Card>
@@ -3724,7 +3786,7 @@ export default function ProviderDashboard() {
         )}
 
         {/* Staff Management Section */}
-        {activeTab === "staff" && (
+        {activeTab === "staff" && businessSettings.business_type !== "Independent" && (
           <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">

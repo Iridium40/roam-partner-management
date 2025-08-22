@@ -11,7 +11,7 @@ const supabase = createClient(
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 10 * 1024 * 1024, // 10MB limit (increased from 5MB)
   },
   fileFilter: (req, file, cb) => {
     // Allow specific file types
@@ -42,32 +42,61 @@ interface DocumentRecord {
 // Helper function to handle multer middleware in Vercel
 function runMiddleware(req: any, res: any, fn: any) {
   return new Promise((resolve, reject) => {
+    console.log("Running multer middleware...");
     fn(req, res, (result: any) => {
       if (result instanceof Error) {
+        console.error("Multer middleware error:", result);
         return reject(result);
       }
+      console.log("Multer middleware completed successfully");
       return resolve(result);
     });
   });
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  console.log("=== UPLOAD DOCUMENTS API CALLED ===");
+  console.log("Method:", req.method);
+  console.log("URL:", req.url);
+  
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  try {
-    // Run multer middleware
-    await runMiddleware(req, res, upload.array("documents", 10));
+  // Add a simple test response to verify the API is working
+  if (req.url?.includes('test')) {
+    return res.status(200).json({ message: "API is working", timestamp: new Date().toISOString() });
+  }
 
-    const files = (req as any).files;
-    const { userId, businessId, documentMappings } = (req as any).body;
+  console.log("=== UPLOAD DOCUMENTS API START ===");
+  console.log("Request headers:", req.headers);
+  console.log("Request body keys:", Object.keys(req.body || {}));
+
+      try {
+      // Run multer middleware
+      console.log("Running multer middleware...");
+      await runMiddleware(req, res, upload.array("documents", 10));
+      console.log("Multer middleware completed");
+
+      const files = (req as any).files;
+      const body = (req as any).body;
+      
+      console.log("Files after multer:", files);
+      console.log("Body after multer:", body);
+      
+      const { userId, businessId, documentMappings } = body;
+
+    console.log("Files received:", files ? files.length : 0);
+    console.log("Files details:", files?.map(f => ({ name: f.originalname, size: f.size, mimetype: f.mimetype })));
+    console.log("Request body:", { userId, businessId, documentMappings });
 
     if (!userId || !businessId) {
+      console.error("Missing userId or businessId:", { userId, businessId });
       return res.status(400).json({ error: "Missing userId or businessId" });
     }
 
     if (!files || files.length === 0) {
+      console.error("No files uploaded");
       return res.status(400).json({ error: "No files uploaded" });
     }
 
@@ -150,6 +179,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       );
 
       try {
+        // Check file size before upload
+        const fileSizeMB = file.size / (1024 * 1024);
+        console.log(`File size: ${fileSizeMB.toFixed(2)} MB`);
+        
+        if (fileSizeMB > 5) {
+          throw new Error(`File size (${fileSizeMB.toFixed(2)} MB) exceeds the 5MB limit`);
+        }
+
         // Generate unique file path using business_id for consistency
         const timestamp = Date.now();
         const fileExtension = file.originalname.split(".").pop();
@@ -157,6 +194,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const filePath = `provider-documents/${businessId}/${fileName}`;
 
         // Upload file to Supabase Storage
+        console.log(`Uploading file to storage: ${filePath}`);
+        console.log(`File size: ${file.size} bytes`);
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from("provider-documents")
           .upload(filePath, file.buffer, {
@@ -167,11 +206,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         if (uploadError) {
           console.error("Storage upload error:", uploadError);
+          console.error("Storage upload error details:", JSON.stringify(uploadError, null, 2));
+          
+          let errorMessage = uploadError.message;
+          if (uploadError.message.includes("maximum allowed size")) {
+            errorMessage = `File size (${fileSizeMB.toFixed(2)} MB) is too large. Please upload a file smaller than 5MB.`;
+          }
+          
           errors.push(
-            `Failed to upload ${file.originalname}: ${uploadError.message}`,
+            `Failed to upload ${file.originalname}: ${errorMessage}`,
           );
           continue;
         }
+
+        console.log("Storage upload successful:", uploadData);
 
         // Get public URL
         const {
@@ -202,14 +250,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const documentData = {
           business_id: businessId,
-          document_type: documentType,
+          document_type: documentType as any, // Cast to any to handle enum type
           document_name: file.originalname,
           file_url: publicUrl,
           file_size_bytes: file.size,
-          verification_status: "pending",
+          verification_status: "pending" as any, // Cast to any to handle enum type
         };
 
         console.log("About to save document data:", documentData);
+        console.log("Business ID being used:", businessId);
+        console.log("Document type being saved:", documentType);
 
         // Use insert instead of upsert since we don't have a unique constraint
         const { data: dbRecord, error: dbError } = await supabase
@@ -218,16 +268,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .select()
           .single();
 
-        console.log("Database upsert result:", { dbRecord, dbError });
+        console.log("Database insert result:", { dbRecord, dbError });
+        console.log("Saved document record:", dbRecord);
 
         if (dbError) {
           console.error("Database record error:", dbError);
           console.error("Error details:", JSON.stringify(dbError, null, 2));
+          console.error("Failed to save document record for:", file.originalname);
           errors.push(
             `Failed to save record for ${file.originalname}: ${dbError.message}`,
           );
 
           // Clean up storage file if database fails
+          console.log("Cleaning up storage file due to database error:", uploadData.path);
           await supabase.storage
             .from("provider-documents")
             .remove([uploadData.path]);

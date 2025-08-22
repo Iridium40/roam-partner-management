@@ -482,7 +482,7 @@ export default function ProviderPortal() {
                           </p>
                           <Button
                             onClick={() =>
-                              navigate("/provider-onboarding-flow")
+                              navigate("/become-a-provider")
                             }
                             className="w-full bg-roam-blue hover:bg-roam-blue/90"
                             size="lg"

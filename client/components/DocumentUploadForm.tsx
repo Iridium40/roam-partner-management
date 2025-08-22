@@ -19,6 +19,7 @@ import {
   Info,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { BusinessDocumentType } from "@/lib/database.types";
 
 interface UploadedDocument {
   id: string;
@@ -30,13 +31,7 @@ interface UploadedDocument {
   error?: string;
 }
 
-type DocumentType =
-  | "drivers_license"
-  | "proof_of_address"
-  | "liability_insurance"
-  | "professional_license"
-  | "professional_certificate"
-  | "business_license";
+type DocumentType = BusinessDocumentType;
 
 interface RequiredDocuments {
   drivers_license: boolean;
@@ -280,21 +275,37 @@ export function DocumentUploadForm({
         JSON.stringify({ [file.name]: documentType }),
       );
 
+      console.log("Uploading file:", {
+        fileName: file.name,
+        fileSize: file.size,
+        documentType: documentType,
+        userId: userId,
+        businessId: businessId
+      });
+
+      console.log("Sending fetch request to upload documents...");
       const response = await fetch("/api/onboarding/upload-documents", {
         method: "POST",
         body: formData,
       });
+      console.log("Fetch response status:", response.status);
+      console.log("Fetch response headers:", Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorData = await response
           .json()
           .catch(() => ({ error: response.statusText }));
+        console.error("Upload API error:", errorData);
         throw new Error(
           `Upload failed: ${errorData.error || response.statusText}`,
         );
       }
 
       const result = await response.json();
+      console.log("Upload API response:", result);
+      console.log("Upload API response.uploaded:", result.uploaded);
+      console.log("Upload API response.errors:", result.errors);
+      console.log("Upload API response.success:", result.success);
       const uploadedDoc = result.uploaded?.[0];
 
       clearInterval(progressInterval);
@@ -357,8 +368,12 @@ export function DocumentUploadForm({
   };
 
   const retryUpload = (docId: string) => {
+    console.log("Retrying upload for document ID:", docId);
+    console.log("Available documents:", documents);
+    
     const document = documents.find((doc) => doc.id === docId);
     if (document) {
+      console.log("Found document to retry:", document);
       // Remove the failed document and re-upload
       setDocuments((prev) => prev.filter((doc) => doc.id !== docId));
       const fileList = {
@@ -366,6 +381,8 @@ export function DocumentUploadForm({
         length: 1,
       } as unknown as FileList;
       handleFileSelect(fileList, document.type);
+    } else {
+      console.error("Document not found for retry:", docId);
     }
   };
 
@@ -400,7 +417,7 @@ export function DocumentUploadForm({
 
   const getDocumentStatus = (documentType: DocumentType) => {
     const doc = documents.find(
-      (doc) => doc.type === documentType && doc.status !== "error",
+      (doc) => doc.type === documentType,
     );
     return doc?.status || null;
   };
@@ -572,7 +589,11 @@ export function DocumentUploadForm({
                                   doc.type === documentType &&
                                   doc.status === "error",
                               );
-                              if (failedDoc) retryUpload(failedDoc.id);
+                              if (failedDoc) {
+                                retryUpload(failedDoc.id);
+                              } else {
+                                console.error("Failed document not found for retry:", documentType);
+                              }
                             }}
                           >
                             Try Again
