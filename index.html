@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Permissions-Policy"
+      content="identity-credentials-get=*, publickey-credentials-get=*, federated-credentials=*, web-authentication=*, otp-credentials=*"
+    />
+    <meta
+      http-equiv="Feature-Policy"
+      content="identity-credentials-get *; publickey-credentials-get *; federated-credentials *"
+    />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com https://maps.googleapis.com https://maps.gstatic.com https://www.gstatic.com https://js.stripe.com https://js.stripe.com/basil/ https://m.stripe.network https://hooks.stripe.com https://cdn.plaid.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com https://maps.googleapis.com; font-src 'self' https://fonts.gstatic.com https://maps.gstatic.com; img-src 'self' data: blob: https: https://maps.gstatic.com https://maps.googleapis.com; connect-src 'self' https: wss: data: https://maps.googleapis.com https://api.stripe.com https://m.stripe.network https://hooks.stripe.com https://production.plaid.com https://sandbox.plaid.com https://*.supabase.co; frame-src 'self' https://accounts.google.com https://www.google.com https://js.stripe.com https://js.stripe.com/basil/ https://hooks.stripe.com https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self';"
+    />
+    <meta name="referrer" content="origin" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <title>ROAM - Your Best Life. Everywhere.</title>
+  </head>
+
+  <body>
+    <div id="root"></div>
+
+    <script type="module" src="/client/App.tsx"></script>
+  </body>
+</html>

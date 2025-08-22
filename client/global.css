@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  /* ROAM brand styles for production compatibility */
+  .text-roam-blue { color: hsl(220 43% 38%) !important; }
+  .text-roam-light-blue { color: hsl(215 88% 79%) !important; }
+  .text-roam-yellow { color: hsl(49 100% 65%) !important; }
+  .bg-roam-blue { background-color: hsl(220 43% 38%) !important; }
+  .bg-roam-light-blue { background-color: hsl(215 88% 79%) !important; }
+  .bg-roam-yellow { background-color: hsl(49 100% 65%) !important; }
+  .bg-roam-light-blue\/20 { background-color: hsl(215 88% 79% / 0.2) !important; }
+  .bg-roam-light-blue\/30 { background-color: hsl(215 88% 79% / 0.3) !important; }
+  .bg-roam-light-blue\/10 { background-color: hsl(215 88% 79% / 0.1) !important; }
+  .bg-roam-blue\/10 { background-color: hsl(220 43% 38% / 0.1) !important; }
+  .bg-roam-blue\/90 { background-color: hsl(220 43% 38% / 0.9) !important; }
+  .border-roam-blue { border-color: hsl(220 43% 38%) !important; }
+  .border-roam-light-blue { border-color: hsl(215 88% 79%) !important; }
+  .border-roam-light-blue\/30 { border-color: hsl(215 88% 79% / 0.3) !important; }
+  .border-roam-light-blue\/20 { border-color: hsl(215 88% 79% / 0.2) !important; }
+  .border-l-roam-blue { border-left-color: hsl(220 43% 38%) !important; }
+  .from-roam-blue { --tw-gradient-from: hsl(220 43% 38%) var(--tw-gradient-from-position); --tw-gradient-to: hsl(220 43% 38% / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+  .to-roam-light-blue { --tw-gradient-to: hsl(215 88% 79%) var(--tw-gradient-to-position); }
+  .to-roam-blue { --tw-gradient-to: hsl(220 43% 38%) var(--tw-gradient-to-position); }
+  .via-roam-blue { --tw-gradient-to: hsl(220 43% 38% / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), hsl(220 43% 38%) var(--tw-gradient-via-position), var(--tw-gradient-to); }
+  .hover\:text-roam-blue:hover { color: hsl(220 43% 38%) !important; }
+  .hover\:text-roam-blue\/80:hover { color: hsl(220 43% 38% / 0.8) !important; }
+  .hover\:bg-roam-blue:hover { background-color: hsl(220 43% 38%) !important; }
+  .hover\:bg-roam-blue\/90:hover { background-color: hsl(220 43% 38% / 0.9) !important; }
+  .group-hover\:text-roam-blue:hover { color: hsl(220 43% 38%) !important; }
+  .data-\[state\=active\]\:bg-roam-blue[data-state="active"] { background-color: hsl(220 43% 38%) !important; }
+  .text-roam-warning { color: hsl(49 100% 65%) !important; }
+}
+
+/* Plaid Link Modal Fixes */
+[data-plaid-link-modal] {
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+}
+
+[data-plaid-link-modal] input,
+[data-plaid-link-modal] button,
+[data-plaid-link-modal] select {
+  pointer-events: auto !important;
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+
+[data-plaid-link-modal] input[type="text"],
+[data-plaid-link-modal] input[type="search"],
+[data-plaid-link-modal] input[type="email"],
+[data-plaid-link-modal] input[type="password"] {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  background-color: white !important;
+  border: 1px solid #ccc !important;
+  padding: 8px !important;
+  font-size: 16px !important; /* Prevents zoom on iOS */
+}
+
+@layer base {
+  /**
+   * Tailwind CSS theme
+   * tailwind.config.ts expects the following color variables to be expressed as HSL values.
+   * A different format will require also updating the theme in tailwind.config.ts.
+  */
+  :root {
+    /* ROAM Brand Colors */
+    --roam-blue: 220 43% 38%; /* #375289 */
+    --roam-light-blue: 215 88% 79%; /* #9BC1F9 */
+    --roam-yellow: 49 100% 65%; /* #FFCD4D */
+
+    --background: 210 40% 98%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 220 43% 38%; /* ROAM Blue */
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 215 88% 79%; /* ROAM Light Blue */
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 220 43% 38%; /* ROAM Blue */
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 220 43% 38%; /* ROAM Blue */
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 210 40% 96.1%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 220 43% 38%; /* ROAM Blue */
+
+    /* ROAM specific variables */
+    --roam-success: 142 76% 36%;
+    --roam-warning: 49 100% 65%; /* ROAM Yellow */
+    --roam-info: 215 88% 79%; /* ROAM Light Blue */
+  }
+
+
+  /* Smooth theme transitions */
+  * {
+    transition:
+      background-color 0.3s ease,
+      border-color 0.3s ease,
+      color 0.3s ease;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}

@@ -1,0 +1,164 @@
+{
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com https://maps.googleapis.com https://maps.gstatic.com https://www.gstatic.com https://js.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com https://maps.googleapis.com; font-src 'self' https://fonts.gstatic.com https://maps.gstatic.com; img-src 'self' data: blob: https: https://maps.gstatic.com https://maps.googleapis.com; connect-src 'self' https: wss: data: https://maps.googleapis.com https://api.stripe.com; frame-src 'self' https://accounts.google.com https://www.google.com https://js.stripe.com https://hooks.stripe.com https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self';"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    },
+    {
+      "source": "/api/notifications/edge",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PATCH, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Cache-Control"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/notifications/edge",
+      "destination": "/api/notifications/edge.ts"
+    },
+    {
+      "source": "/api/bookings/status-update",
+      "destination": "/api/bookings/status-update.ts"
+    },
+    {
+      "source": "/api/twilio-conversations",
+      "destination": "/api/twilio-conversations.ts"
+    },
+    {
+      "source": "/api/onboarding/business-info",
+      "destination": "/api/onboarding/business-info.ts"
+    },
+    {
+      "source": "/api/onboarding/upload-documents",
+      "destination": "/api/onboarding/upload-documents.ts"
+    },
+    {
+      "source": "/api/onboarding/submit-application",
+      "destination": "/api/onboarding/submit-application.ts"
+    },
+    {
+      "source": "/api/onboarding/status/(.*)",
+      "destination": "/api/onboarding/status/[userId].ts"
+    },
+    {
+      "source": "/api/admin/approve-application",
+      "destination": "/api/admin/approve-application.ts"
+    },
+    {
+      "source": "/api/stripe/create-verification-session",
+      "destination": "/api/stripe/create-verification-session.ts"
+    },
+    {
+      "source": "/api/stripe/check-verification-status/(.*)",
+      "destination": "/api/stripe/check-verification-status/[sessionId].ts"
+    },
+    {
+      "source": "/api/stripe/create-connect-account",
+      "destination": "/api/stripe/create-connect-account.ts"
+    },
+    {
+      "source": "/api/plaid/create-link-token",
+      "destination": "/api/plaid/create-link-token.ts"
+    },
+    {
+      "source": "/api/plaid/exchange-public-token",
+      "destination": "/api/plaid/exchange-public-token.ts"
+    },
+    {
+      "source": "/api/test-db-connection",
+      "destination": "/api/test-db-connection.ts"
+    },
+    {
+      "source": "/api/test",
+      "destination": "/api/test.ts"
+    },
+    {
+      "source": "/api/system-config-test",
+      "destination": "/api/system-config-test.ts"
+    },
+    {
+      "source": "/api/auth/signup",
+      "destination": "/api/auth/signup.ts"
+    },
+    {
+      "source": "/api/admin/delete-test-user",
+      "destination": "/api/admin/delete-test-user.ts"
+    },
+    {
+      "source": "/api/admin/list-test-users",
+      "destination": "/api/admin/list-test-users.ts"
+    },
+    {
+      "source": "/api/admin/reject-application",
+      "destination": "/api/admin/reject-application.ts"
+    },
+    {
+      "source": "/api/onboarding/complete",
+      "destination": "/api/onboarding/complete.ts"
+    },
+    {
+      "source": "/api/onboarding/validate-phase2-token",
+      "destination": "/api/onboarding/validate-phase2-token.ts"
+    },
+    {
+      "source": "/api/onboarding/save-phase2-progress",
+      "destination": "/api/onboarding/save-phase2-progress.ts"
+    },
+    {
+      "source": "/api/onboarding/phase2-progress/(.*)",
+      "destination": "/api/onboarding/phase2-progress/[businessId].ts"
+    },
+    {
+      "source": "/api/business/profile/(.*)",
+      "destination": "/api/business/profile/[businessId].ts"
+    },
+    {
+      "source": "/api/provider/profile/(.*)",
+      "destination": "/api/provider/profile/[userId].ts"
+    },
+    {
+      "source": "/api/test-business-profile",
+      "destination": "/api/test-business-profile.ts"
+    },
+    {
+      "source": "/api/test/generate-phase2-token",
+      "destination": "/api/test/generate-phase2-token.ts"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
