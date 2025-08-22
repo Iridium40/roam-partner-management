@@ -274,15 +274,8 @@ export default function Phase2Test() {
             onComplete={() => handleStepComplete("service_pricing")}
             onBack={handleBack}
             initialData={{
-              stripeConnected: true,
-              plaidConnected: true,
-              bankAccount: {
-                account_id: "test_account_123",
-                mask: "1234",
-                name: "Test Checking Account",
-                type: "depository",
-                institution_name: "Test Bank",
-              }
+              stripeConnected: false,
+              plaidConnected: false,
             }}
           />
         );

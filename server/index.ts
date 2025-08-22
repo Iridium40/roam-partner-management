@@ -7,6 +7,7 @@ import {
   handleEdgeNotifications,
   handleNotificationUpdates,
 } from "./routes/edge-notifications";
+import { createLinkToken, exchangePublicToken, checkConnection } from "./routes/plaid";
 
 export function createServer() {
   const app = express();
@@ -88,6 +89,29 @@ export function createServer() {
       res
         .status(500)
         .json({ error: "Failed to load upload documents handler" });
+    }
+  });
+
+  // Plaid create link token route
+  app.post("/api/plaid/create-link-token", createLinkToken);
+
+  // Plaid exchange public token route
+  app.post("/api/plaid/exchange-public-token", exchangePublicToken);
+
+  // Plaid check connection route
+  app.get("/api/plaid/check-connection/:userId", checkConnection);
+
+  // Stripe create connect account route
+  app.post("/api/stripe/create-connect-account", async (req, res) => {
+    try {
+      console.log("Local server: Stripe create connect account route called");
+      const stripeHandler = await import("../api/stripe/create-connect-account");
+      await stripeHandler.default(req as any, res as any);
+    } catch (error) {
+      console.error("Error importing Stripe create connect account handler:", error);
+      res
+        .status(500)
+        .json({ error: "Failed to load Stripe create connect account handler" });
     }
   });
 

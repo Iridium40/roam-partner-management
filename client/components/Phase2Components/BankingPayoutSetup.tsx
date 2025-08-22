@@ -123,6 +123,10 @@ export default function BankingPayoutSetup({
     return Math.round((completed / total) * 100);
   };
 
+  const canSubmit = () => {
+    return bankingData.stripeConnected && bankingData.plaidConnected;
+  };
+
   const handleSubmit = async () => {
     try {
       setLoading(true);
@@ -157,9 +161,7 @@ export default function BankingPayoutSetup({
     }
   };
 
-  const canSubmit = () => {
-    return completionPercentage() === 100;
-  };
+
 
   return (
     <div className={`max-w-4xl mx-auto ${className}`}>
@@ -199,32 +201,35 @@ export default function BankingPayoutSetup({
             </Alert>
           )}
 
-          {/* Stripe Connect Setup */}
+          {/* Payment Processing Information */}
           <div className="space-y-4">
             <Label className="text-lg font-semibold">Payment Processing</Label>
-            <Card className="p-4 border-green-200 bg-green-50">
+            <Card className="p-4 border-blue-200 bg-blue-50">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                  <CreditCard className="w-5 h-5 text-green-600" />
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <CreditCard className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-green-900">Stripe Connect</h4>
-                  <p className="text-sm text-green-800">Secure payment processing & payouts</p>
+                  <h4 className="font-semibold text-blue-900">Stripe Connect</h4>
+                  <p className="text-sm text-blue-800">Secure payment processing & payouts</p>
                 </div>
               </div>
-              <div className="mt-3 space-y-2 text-sm text-green-700">
+              <div className="mt-3 space-y-2 text-sm text-blue-700">
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  <CheckCircle className="w-4 h-4 text-blue-600" />
                   <span>Instant payouts every Friday</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  <CheckCircle className="w-4 h-4 text-blue-600" />
                   <span>Secure payment processing</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  <CheckCircle className="w-4 h-4 text-blue-600" />
                   <span>Automatic tax handling</span>
                 </div>
+              </div>
+              <div className="mt-3 p-2 bg-blue-100 rounded text-xs text-blue-800">
+                <strong>Note:</strong> This shows what Stripe Connect provides. You'll need to connect your account below.
               </div>
             </Card>
           </div>
@@ -300,27 +305,37 @@ export default function BankingPayoutSetup({
                     </p>
                   </div>
                   <PlaidBankConnection
-                    userId={userId}
-                    businessId={businessId}
-                    businessType="sole_proprietorship"
-                    onConnectionComplete={(connectionData) => {
-                      setBankingData(prev => ({
-                        ...prev,
-                        plaidConnected: true,
-                        bankAccount: {
-                          account_id: connectionData.accounts[0]?.account_id || '',
-                          mask: connectionData.accounts[0]?.mask || '',
-                          name: connectionData.accounts[0]?.name || '',
-                          type: connectionData.accounts[0]?.type || '',
-                          institution_name: connectionData.institution.name,
-                        }
-                      }));
-                    }}
-                    onConnectionError={(error) => {
-                      setError(error);
-                    }}
-                    className="w-full"
-                  />
+                      userId={userId}
+                      businessId={businessId}
+                      businessType="llc"
+                      onConnectionComplete={(connectionData) => {
+                        setBankingData(prev => ({
+                          ...prev,
+                          plaidConnected: true,
+                          bankAccount: {
+                            account_id: connectionData.accounts[0]?.account_id || '',
+                            mask: connectionData.accounts[0]?.mask || '',
+                            name: connectionData.accounts[0]?.name || '',
+                            type: connectionData.accounts[0]?.type || '',
+                            institution_name: connectionData.institution.name,
+                          }
+                        }));
+                      }}
+                      onConnectionError={(error) => {
+                        setError(error);
+                      }}
+                      className="w-full"
+                    />
+                    
+                    {/* Debug Information */}
+                    <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                      <p className="text-sm text-gray-700">
+                        <strong>Debug Info:</strong> 
+                        <br />• The PlaidBankConnection component should show a "Connect Bank Account" button
+                        <br />• Check browser console for any API errors
+                        <br />• Make sure your Plaid environment variables are set
+                      </p>
+                    </div>
                 </div>
               </Card>
             ) : (
@@ -417,6 +432,15 @@ export default function BankingPayoutSetup({
               disabled={loading || !canSubmit()}
               className="bg-roam-blue hover:bg-roam-blue/90 ml-auto"
             >
+              {!canSubmit() && (
+                <span className="text-xs mr-2">
+                  {!bankingData.stripeConnected && !bankingData.plaidConnected 
+                    ? "Connect Stripe & Bank Account" 
+                    : !bankingData.stripeConnected 
+                    ? "Connect Stripe Account" 
+                    : "Connect Bank Account"}
+                </span>
+              )}
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
