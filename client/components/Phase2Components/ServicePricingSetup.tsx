@@ -36,18 +36,55 @@ import {
   Info,
   Star,
   Clock,
-  Users
+  Users,
+  Settings,
+  Package
 } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
 
-interface Service {
+interface EligibleService {
   id: string;
   name: string;
   description: string;
-  basePrice: number;
-  duration: number; // in minutes
-  category: string;
-  isActive: boolean;
-  addons?: ServiceAddon[];
+  min_price: number;
+  duration_minutes: number;
+  image_url?: string;
+  is_active: boolean;
+  subcategory_id: string;
+  service_subcategories?: {
+    service_subcategory_type: string;
+    service_categories?: {
+      service_category_type: string;
+    };
+  };
+  is_configured?: boolean;
+  business_price?: number;
+  delivery_type?: string;
+}
+
+interface BusinessService {
+  id: string;
+  business_id: string;
+  service_id: string;
+  business_price: number;
+  is_active: boolean;
+  delivery_type?: string;
+}
+
+interface EligibleAddon {
+  id: string;
+  name: string;
+  description: string;
+  image_url?: string;
+  is_active: boolean;
+}
+
+interface BusinessAddon {
+  id: string;
+  business_id: string;
+  addon_id: string;
+  custom_price: number | null;
+  is_available: boolean;
 }
 
 interface ServiceAddon {
@@ -56,14 +93,20 @@ interface ServiceAddon {
   description: string;
   price: number;
   isActive: boolean;
+  compatible_service_id?: string;
+  compatible_service_name?: string;
 }
 
 interface ServicePricingData {
-  services: Service[];
-  pricingModel: 'fixed' | 'hourly' | 'variable';
-  currency: string;
+  business_services: BusinessService[];
+  business_addons: BusinessAddon[];
+  eligible_services: EligibleService[];
+  eligible_addons: EligibleAddon[];
+  service_addon_map: Record<string, string[]>;
+  pricingModel: 'fixed'; // Fixed to 'fixed' only
+  currency: 'USD'; // Fixed to 'USD' only
   taxRate: number;
-  cancellationPolicy: string;
+  cancellationPolicy: string; // Will be set to platform policy
 }
 
 interface ServicePricingSetupProps {
@@ -75,20 +118,16 @@ interface ServicePricingSetupProps {
   className?: string;
 }
 
-const serviceCategories = [
-  { value: 'cleaning', label: 'Cleaning Services' },
-  { value: 'maintenance', label: 'Maintenance & Repair' },
-  { value: 'consultation', label: 'Consultation' },
-  { value: 'installation', label: 'Installation' },
-  { value: 'inspection', label: 'Inspection' },
-  { value: 'other', label: 'Other Services' },
-];
+// Platform defaults - no longer configurable
+const PLATFORM_PRICING_MODEL = 'fixed';
+const PLATFORM_CURRENCY = 'USD';
+const PLATFORM_CANCELLATION_POLICY = 'By using our platform, you agree to our cancellation policy. For details, visit our Terms of Service.';
 
-const pricingModels = [
-  { value: 'fixed', label: 'Fixed Price', description: 'Set price per service' },
-  { value: 'hourly', label: 'Hourly Rate', description: 'Charge by the hour' },
-  { value: 'variable', label: 'Variable Pricing', description: 'Price varies by complexity' },
-];
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.VITE_PUBLIC_SUPABASE_URL!,
+  process.env.VITE_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export default function ServicePricingSetup({
   businessId,
@@ -100,24 +139,24 @@ export default function ServicePricingSetup({
 }: ServicePricingSetupProps) {
   const [pricingData, setPricingData] = useState<ServicePricingData>(
     initialData || {
-      services: [],
-      pricingModel: 'fixed',
-      currency: 'USD',
+      business_services: [],
+      business_addons: [],
+      eligible_services: [],
+      eligible_addons: [],
+      service_addon_map: {},
+      pricingModel: PLATFORM_PRICING_MODEL,
+      currency: PLATFORM_CURRENCY,
       taxRate: 0,
-      cancellationPolicy: '24-hour notice required for cancellations',
+      cancellationPolicy: PLATFORM_CANCELLATION_POLICY,
     }
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAddServiceModal, setShowAddServiceModal] = useState(false);
-  const [editingService, setEditingService] = useState<Service | null>(null);
-  const [newService, setNewService] = useState({
-    name: '',
-    description: '',
-    basePrice: 0,
-    duration: 60,
-    category: 'cleaning',
-  });
+  const [showAddonModal, setShowAddonModal] = useState(false);
+  const [editingService, setEditingService] = useState<EligibleService | null>(null);
+  const [editingAddon, setEditingAddon] = useState<EligibleAddon | null>(null);
+  const [selectedServiceForAddon, setSelectedServiceForAddon] = useState<string | null>(null);
 
   const updatePricingData = (field: keyof ServicePricingData, value: any) => {
     setPricingData(prev => ({
@@ -126,59 +165,238 @@ export default function ServicePricingSetup({
     }));
   };
 
-  const addService = () => {
-    if (!newService.name || !newService.description || newService.basePrice <= 0) {
-      setError('Please fill in all required fields and set a valid price');
-      return;
+  // Fetch eligible services and addons for the business
+  const fetchEligibleServices = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Call the edge function to get eligible services and addons
+      const supabaseUrl = 'https://vssomyuyhicaxsgiaupo.supabase.co';
+      const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzc29teXV5aGljYXhzZ2lhdXBvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM0NTM3MTUsImV4cCI6MjA2OTAyOTcxNX0.c4JrNgMGsrCaFP2VrF4pL6iUG8Ub8Hkcrm5345r7KHs';
+
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/get-business-eligible-services?business_id=${businessId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${anonKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch eligible services: ${response.statusText}`);
+      }
+
+      const edgeData = await response.json();
+      console.log('Eligible services data:', edgeData);
+
+      // Get current business services and addons
+      const { data: currentBusinessServices } = await supabase
+        .from('business_services')
+        .select('*')
+        .eq('business_id', businessId);
+
+      const { data: currentBusinessAddons } = await supabase
+        .from('business_addons')
+        .select('*')
+        .eq('business_id', businessId);
+
+      // Update pricing data with fetched information
+      setPricingData(prev => ({
+        ...prev,
+        eligible_services: edgeData.eligible_services || [],
+        eligible_addons: edgeData.eligible_addons || [],
+        service_addon_map: edgeData.service_addon_map || {},
+        business_services: currentBusinessServices || [],
+        business_addons: currentBusinessAddons || [],
+      }));
+
+    } catch (error) {
+      console.error('Error fetching eligible services:', error);
+      setError(error instanceof Error ? error.message : 'Failed to fetch eligible services');
+    } finally {
+      setLoading(false);
     }
-
-    const service: Service = {
-      id: Date.now().toString(),
-      ...newService,
-      isActive: true,
-      addons: [],
-    };
-
-    setPricingData(prev => ({
-      ...prev,
-      services: [...prev.services, service]
-    }));
-
-    setNewService({
-      name: '',
-      description: '',
-      basePrice: 0,
-      duration: 60,
-      category: 'cleaning',
-    });
-    setShowAddServiceModal(false);
-    setError(null);
   };
 
-  const updateService = (id: string, updates: Partial<Service>) => {
-    setPricingData(prev => ({
-      ...prev,
-      services: prev.services.map(service => 
-        service.id === id ? { ...service, ...updates } : service
-      )
-    }));
+  // Load eligible services on component mount
+  useEffect(() => {
+    fetchEligibleServices();
+  }, [businessId]);
+
+  // Add a service to business_services
+  const addBusinessService = async (serviceId: string, businessPrice: number, deliveryType: string = 'customer_location') => {
+    try {
+      const { data, error } = await supabase
+        .from('business_services')
+        .insert({
+          business_id: businessId,
+          service_id: serviceId,
+          business_price: businessPrice,
+          is_active: true,
+          delivery_type: deliveryType
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Update local state
+      setPricingData(prev => ({
+        ...prev,
+        business_services: [...prev.business_services, data]
+      }));
+
+      return data;
+    } catch (error) {
+      console.error('Error adding business service:', error);
+      setError(error instanceof Error ? error.message : 'Failed to add service');
+      throw error;
+    }
   };
 
-  const removeService = (id: string) => {
-    setPricingData(prev => ({
-      ...prev,
-      services: prev.services.filter(service => service.id !== id)
-    }));
+  // Update a business service
+  const updateBusinessService = async (serviceId: string, updates: Partial<BusinessService>) => {
+    try {
+      const { data, error } = await supabase
+        .from('business_services')
+        .update(updates)
+        .eq('business_id', businessId)
+        .eq('service_id', serviceId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Update local state
+      setPricingData(prev => ({
+        ...prev,
+        business_services: prev.business_services.map(bs => 
+          bs.service_id === serviceId ? { ...bs, ...updates } : bs
+        )
+      }));
+
+      return data;
+    } catch (error) {
+      console.error('Error updating business service:', error);
+      setError(error instanceof Error ? error.message : 'Failed to update service');
+      throw error;
+    }
+  };
+
+  // Remove a business service
+  const removeBusinessService = async (serviceId: string) => {
+    try {
+      const { error } = await supabase
+        .from('business_services')
+        .delete()
+        .eq('business_id', businessId)
+        .eq('service_id', serviceId);
+
+      if (error) throw error;
+
+      // Update local state
+      setPricingData(prev => ({
+        ...prev,
+        business_services: prev.business_services.filter(bs => bs.service_id !== serviceId)
+      }));
+    } catch (error) {
+      console.error('Error removing business service:', error);
+      setError(error instanceof Error ? error.message : 'Failed to remove service');
+      throw error;
+    }
+  };
+
+  // Add an addon to business_addons
+  const addBusinessAddon = async (addonId: string, customPrice: number | null = null) => {
+    try {
+      const { data, error } = await supabase
+        .from('business_addons')
+        .insert({
+          business_id: businessId,
+          addon_id: addonId,
+          custom_price: customPrice,
+          is_available: true
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Update local state
+      setPricingData(prev => ({
+        ...prev,
+        business_addons: [...prev.business_addons, data]
+      }));
+
+      return data;
+    } catch (error) {
+      console.error('Error adding business addon:', error);
+      setError(error instanceof Error ? error.message : 'Failed to add addon');
+      throw error;
+    }
+  };
+
+  // Update a business addon
+  const updateBusinessAddon = async (addonId: string, updates: Partial<BusinessAddon>) => {
+    try {
+      const { data, error } = await supabase
+        .from('business_addons')
+        .update(updates)
+        .eq('business_id', businessId)
+        .eq('addon_id', addonId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Update local state
+      setPricingData(prev => ({
+        ...prev,
+        business_addons: prev.business_addons.map(ba => 
+          ba.addon_id === addonId ? { ...ba, ...updates } : ba
+        )
+      }));
+
+      return data;
+    } catch (error) {
+      console.error('Error updating business addon:', error);
+      setError(error instanceof Error ? error.message : 'Failed to update addon');
+      throw error;
+    }
+  };
+
+  // Remove a business addon
+  const removeBusinessAddon = async (addonId: string) => {
+    try {
+      const { error } = await supabase
+        .from('business_addons')
+        .delete()
+        .eq('business_id', businessId)
+        .eq('addon_id', addonId);
+
+      if (error) throw error;
+
+      // Update local state
+      setPricingData(prev => ({
+        ...prev,
+        business_addons: prev.business_addons.filter(ba => ba.addon_id !== addonId)
+      }));
+    } catch (error) {
+      console.error('Error removing business addon:', error);
+      setError(error instanceof Error ? error.message : 'Failed to remove addon');
+      throw error;
+    }
   };
 
   const completionPercentage = () => {
     let completed = 0;
-    const total = 4; // pricing model, currency, tax rate, at least one service
+    const total = 2; // tax rate, at least one service (pricing model and currency are fixed)
 
-    if (pricingData.pricingModel) completed++;
-    if (pricingData.currency) completed++;
     if (pricingData.taxRate >= 0) completed++;
-    if (pricingData.services.length > 0) completed++;
+    if (pricingData.business_services.length > 0) completed++;
 
     return Math.round((completed / total) * 100);
   };
@@ -222,7 +440,7 @@ export default function ServicePricingSetup({
   };
 
   return (
-    <div className={`max-w-4xl mx-auto ${className}`}>
+    <div className={`max-w-6xl mx-auto ${className}`}>
       <Card>
         <CardHeader>
           <div className="flex items-center gap-3 mb-4">
@@ -231,10 +449,10 @@ export default function ServicePricingSetup({
             </div>
             <div>
               <CardTitle className="text-2xl text-roam-blue">
-                Service Pricing
+                Service Pricing & Addons
               </CardTitle>
               <p className="text-foreground/70">
-                Set up your services and pricing structure
+                Configure your eligible services and addons with custom pricing
               </p>
             </div>
           </div>
@@ -259,251 +477,328 @@ export default function ServicePricingSetup({
             </Alert>
           )}
 
-          {/* Pricing Model Selection */}
+          {loading && (
+            <Alert>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <AlertDescription>
+                Loading eligible services and addons...
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Platform Settings */}
           <div className="space-y-4">
-            <Label className="text-lg font-semibold">Pricing Model</Label>
+            <Label className="text-lg font-semibold">Platform Settings</Label>
             <div className="grid gap-4 md:grid-cols-3">
-              {pricingModels.map((model) => (
-                <Card 
-                  key={model.value}
-                  className={`p-4 cursor-pointer border-2 transition-colors ${
-                    pricingData.pricingModel === model.value 
-                      ? 'border-roam-blue bg-blue-50' 
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                  onClick={() => updatePricingData('pricingModel', model.value)}
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <DollarSign className="w-5 h-5 text-roam-blue" />
-                    <h4 className="font-semibold">{model.label}</h4>
-                  </div>
-                  <p className="text-sm text-gray-600">{model.description}</p>
-                </Card>
-              ))}
+              <Card className="p-4 border-blue-200 bg-blue-50">
+                <div className="flex items-center gap-3 mb-2">
+                  <DollarSign className="w-5 h-5 text-blue-600" />
+                  <h4 className="font-semibold text-blue-900">Pricing Model</h4>
+                </div>
+                <p className="text-sm text-blue-800">Fixed Price</p>
+                <p className="text-xs text-blue-700 mt-1">Platform Default</p>
+              </Card>
+              
+              <Card className="p-4 border-blue-200 bg-blue-50">
+                <div className="flex items-center gap-3 mb-2">
+                  <DollarSign className="w-5 h-5 text-blue-600" />
+                  <h4 className="font-semibold text-blue-900">Currency</h4>
+                </div>
+                <p className="text-sm text-blue-800">USD ($)</p>
+                <p className="text-xs text-blue-700 mt-1">Platform Default</p>
+              </Card>
+
+              <Card className="p-4 border-blue-200 bg-blue-50">
+                <div className="flex items-center gap-3 mb-2">
+                  <Settings className="w-5 h-5 text-blue-600" />
+                  <h4 className="font-semibold text-blue-900">Tax Rate</h4>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    value={pricingData.taxRate}
+                    onChange={(e) => updatePricingData('taxRate', parseFloat(e.target.value) || 0)}
+                    placeholder="0"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    className="w-20"
+                  />
+                  <span className="text-sm text-blue-800">%</span>
+                </div>
+              </Card>
             </div>
           </div>
 
-          {/* Currency and Tax Settings */}
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-4">
-              <Label className="text-lg font-semibold">Currency</Label>
-              <Select
-                value={pricingData.currency}
-                onValueChange={(value) => updatePricingData('currency', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="USD">USD ($)</SelectItem>
-                  <SelectItem value="EUR">EUR (€)</SelectItem>
-                  <SelectItem value="GBP">GBP (£)</SelectItem>
-                  <SelectItem value="CAD">CAD (C$)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-4">
-              <Label className="text-lg font-semibold">Tax Rate (%)</Label>
-              <Input
-                type="number"
-                value={pricingData.taxRate}
-                onChange={(e) => updatePricingData('taxRate', parseFloat(e.target.value) || 0)}
-                placeholder="0"
-                min="0"
-                max="100"
-                step="0.1"
-              />
-            </div>
-          </div>
-
-          {/* Services Management */}
+          {/* My Services */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <Label className="text-lg font-semibold">Services</Label>
-              <Dialog open={showAddServiceModal} onOpenChange={setShowAddServiceModal}>
-                <DialogTrigger asChild>
-                  <Button className="bg-roam-blue hover:bg-roam-blue/90">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Service
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px]">
-                  <DialogHeader>
-                    <DialogTitle>Add New Service</DialogTitle>
-                    <DialogDescription>
-                      Create a new service with pricing and duration.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div>
-                      <Label htmlFor="service_name">Service Name *</Label>
-                      <Input
-                        id="service_name"
-                        value={newService.name}
-                        onChange={(e) => setNewService(prev => ({ ...prev, name: e.target.value }))}
-                        placeholder="e.g., Deep Cleaning"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="service_description">Description *</Label>
-                      <Textarea
-                        id="service_description"
-                        value={newService.description}
-                        onChange={(e) => setNewService(prev => ({ ...prev, description: e.target.value }))}
-                        placeholder="Describe what this service includes..."
-                        rows={3}
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="service_price">Base Price *</Label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                          <Input
-                            id="service_price"
-                            type="number"
-                            value={newService.basePrice}
-                            onChange={(e) => setNewService(prev => ({ ...prev, basePrice: parseFloat(e.target.value) || 0 }))}
-                            className="pl-8"
-                            placeholder="0.00"
-                            min="0"
-                            step="0.01"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <Label htmlFor="service_duration">Duration (minutes)</Label>
-                        <Input
-                          id="service_duration"
-                          type="number"
-                          value={newService.duration}
-                          onChange={(e) => setNewService(prev => ({ ...prev, duration: parseInt(e.target.value) || 60 }))}
-                          placeholder="60"
-                          min="15"
-                          step="15"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="service_category">Category</Label>
-                      <Select
-                        value={newService.category}
-                        onValueChange={(value) => setNewService(prev => ({ ...prev, category: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {serviceCategories.map((category) => (
-                            <SelectItem key={category.value} value={category.value}>
-                              {category.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setShowAddServiceModal(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={addService} className="bg-roam-blue hover:bg-roam-blue/90">
-                      Add Service
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+              <Label className="text-lg font-semibold">My Services</Label>
+              <Badge variant="outline" className="text-sm">
+                {pricingData.business_services.length} configured
+              </Badge>
             </div>
 
-            {pricingData.services.length === 0 ? (
+            {pricingData.business_services.length === 0 ? (
               <Card className="p-8 text-center">
                 <DollarSign className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Services Yet</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Services Configured</h3>
                 <p className="text-gray-600 mb-4">
-                  Add your first service to start accepting bookings
+                  Add services from the available catalog below to start accepting bookings
                 </p>
-                <Button onClick={() => setShowAddServiceModal(true)} className="bg-roam-blue hover:bg-roam-blue/90">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Your First Service
-                </Button>
               </Card>
             ) : (
-              <div className="space-y-4">
-                {pricingData.services.map((service) => (
-                  <Card key={service.id} className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h4 className="font-semibold">{service.name}</h4>
-                          <Badge variant="outline">{service.category}</Badge>
-                          <Badge className={service.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
-                            {service.isActive ? 'Active' : 'Inactive'}
-                          </Badge>
+              <div className="grid gap-4 md:grid-cols-2">
+                {pricingData.business_services.map((businessService) => {
+                  const eligibleService = pricingData.eligible_services.find(es => es.id === businessService.service_id);
+                  if (!eligibleService) return null;
+
+                  return (
+                    <Card key={businessService.service_id} className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h4 className="font-semibold">{eligibleService.name}</h4>
+                            <Badge className={businessService.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
+                              {businessService.is_active ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </div>
+                          <p className="text-gray-600 mb-2">{eligibleService.description}</p>
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                            <span className="flex items-center gap-1">
+                              <DollarSign className="w-4 h-4" />
+                              ${businessService.business_price}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-4 h-4" />
+                              {eligibleService.duration_minutes} min
+                            </span>
+                          </div>
                         </div>
-                        <p className="text-gray-600 mb-2">{service.description}</p>
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                          <span className="flex items-center gap-1">
-                            <DollarSign className="w-4 h-4" />
-                            ${service.basePrice}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-4 h-4" />
-                            {service.duration} min
-                          </span>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setEditingService(eligibleService);
+                              setShowAddServiceModal(true);
+                            }}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeBusinessService(businessService.service_id)}
+                            className="text-red-600 border-red-300 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setEditingService(service);
-                            setNewService({
-                              name: service.name,
-                              description: service.description,
-                              basePrice: service.basePrice,
-                              duration: service.duration,
-                              category: service.category,
-                            });
-                            setShowAddServiceModal(true);
-                          }}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeService(service.id)}
-                          className="text-red-600 border-red-300 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </div>
 
-          {/* Cancellation Policy */}
+          {/* Available Services */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label className="text-lg font-semibold">Available Services</Label>
+              <Badge variant="outline" className="text-sm">
+                {pricingData.eligible_services.filter(es => 
+                  !pricingData.business_services.some(bs => bs.service_id === es.id)
+                ).length} available
+              </Badge>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              {pricingData.eligible_services
+                .filter(eligibleService => 
+                  !pricingData.business_services.some(bs => bs.service_id === eligibleService.id)
+                )
+                .map((eligibleService) => (
+                  <Card key={eligibleService.id} className="p-4 border-dashed">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h4 className="font-semibold">{eligibleService.name}</h4>
+                          <Badge variant="outline">Available</Badge>
+                        </div>
+                        <p className="text-gray-600 mb-2">{eligibleService.description}</p>
+                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                          <span className="flex items-center gap-1">
+                            <DollarSign className="w-4 h-4" />
+                            ${eligibleService.min_price} (min)
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-4 h-4" />
+                            {eligibleService.duration_minutes} min
+                          </span>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setEditingService(eligibleService);
+                          setShowAddServiceModal(true);
+                        }}
+                        className="bg-roam-blue hover:bg-roam-blue/90"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+            </div>
+          </div>
+
+          {/* My Addons */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label className="text-lg font-semibold">My Addons</Label>
+              <Badge variant="outline" className="text-sm">
+                {pricingData.business_addons.length} configured
+              </Badge>
+            </div>
+
+            {pricingData.business_addons.length === 0 ? (
+              <Card className="p-8 text-center">
+                <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Addons Configured</h3>
+                <p className="text-gray-600 mb-4">
+                  Add addons from the available catalog below to enhance your services
+                </p>
+              </Card>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {pricingData.business_addons.map((businessAddon) => {
+                  const eligibleAddon = pricingData.eligible_addons.find(ea => ea.id === businessAddon.addon_id);
+                  if (!eligibleAddon) return null;
+
+                  return (
+                    <Card key={businessAddon.addon_id} className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h4 className="font-semibold">{eligibleAddon.name}</h4>
+                            <Badge className={businessAddon.is_available ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
+                              {businessAddon.is_available ? 'Available' : 'Unavailable'}
+                            </Badge>
+                          </div>
+                          <p className="text-gray-600 mb-2">{eligibleAddon.description}</p>
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                            <span className="flex items-center gap-1">
+                              <DollarSign className="w-4 h-4" />
+                              ${businessAddon.custom_price || 'Variable'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setEditingAddon(eligibleAddon);
+                              setShowAddonModal(true);
+                            }}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeBusinessAddon(businessAddon.addon_id)}
+                            className="text-red-600 border-red-300 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Available Addons */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label className="text-lg font-semibold">Available Addons</Label>
+              <Badge variant="outline" className="text-sm">
+                {pricingData.eligible_addons.filter(ea => 
+                  !pricingData.business_addons.some(ba => ba.addon_id === ea.id)
+                ).length} available
+              </Badge>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              {pricingData.eligible_addons
+                .filter(eligibleAddon => 
+                  !pricingData.business_addons.some(ba => ba.addon_id === eligibleAddon.id)
+                )
+                .map((eligibleAddon) => (
+                  <Card key={eligibleAddon.id} className="p-4 border-dashed">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h4 className="font-semibold">{eligibleAddon.name}</h4>
+                          <Badge variant="outline">Available</Badge>
+                        </div>
+                        <p className="text-gray-600 mb-2">{eligibleAddon.description}</p>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setEditingAddon(eligibleAddon);
+                          setShowAddonModal(true);
+                        }}
+                        className="bg-roam-blue hover:bg-roam-blue/90"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+            </div>
+          </div>
+
+          {/* Platform Cancellation Policy */}
           <div className="space-y-4">
             <Label className="text-lg font-semibold">Cancellation Policy</Label>
-            <Textarea
-              value={pricingData.cancellationPolicy}
-              onChange={(e) => updatePricingData('cancellationPolicy', e.target.value)}
-              placeholder="Describe your cancellation policy..."
-              rows={3}
-            />
+            <Card className="p-4 border-blue-200 bg-blue-50">
+              <div className="flex items-start gap-3">
+                <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h4 className="font-semibold text-blue-900 mb-2">Platform Cancellation Policy</h4>
+                  <p className="text-sm text-blue-800 mb-3">
+                    By using our platform, you agree to our cancellation policy. For detailed terms and conditions, 
+                    please review our platform's cancellation policy.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                    onClick={() => window.open('/terms-of-service', '_blank')}
+                  >
+                    View Platform Policy
+                  </Button>
+                </div>
+              </div>
+            </Card>
           </div>
 
           {/* Information Alert */}
           <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription>
-              <strong>Tip:</strong> You can add more services and adjust pricing anytime from your dashboard. 
-              Consider starting with your most popular services.
+              <strong>Tip:</strong> Services and addons are based on your business qualifications. 
+              You can adjust pricing and availability anytime from your dashboard.
             </AlertDescription>
           </Alert>
 

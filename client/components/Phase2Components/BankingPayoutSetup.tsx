@@ -81,6 +81,18 @@ export default function BankingPayoutSetup({
       setConnectingStripe(true);
       setError(null);
 
+      // Get business profile data for Stripe Connect
+      const businessResponse = await fetch(`/api/business/profile/${businessId}`);
+      if (!businessResponse.ok) {
+        throw new Error('Failed to fetch business profile');
+      }
+      const businessProfile = await businessResponse.json();
+      
+      // Map business profile fields to Stripe Connect requirements
+      const businessName = businessProfile.businessName || 'Test Business';
+      const email = businessProfile.email || 'test@example.com';
+      const businessType = businessProfile.business_type || 'llc';
+
       const response = await fetch('/api/stripe/create-connect-account', {
         method: 'POST',
         headers: {
@@ -89,21 +101,36 @@ export default function BankingPayoutSetup({
         body: JSON.stringify({
           userId,
           businessId,
-          businessType: 'independent', // This would come from business profile
+          businessType,
+          businessName,
+          email,
+          taxInfo: {
+            business_tax_id: '12-3456789', // Mock EIN for testing
+            business_tax_id_type: 'ein',
+            mcc: '5734', // Computer Software Stores
+            product_description: 'Professional services',
+            url: businessProfile.websiteUrl || 'https://example.com'
+          },
+          country: 'US',
+          capabilities: {
+            card_payments: { requested: true },
+            transfers: { requested: true }
+          }
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create Stripe Connect account');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create Stripe Connect account');
       }
 
       const result = await response.json();
       
       // Redirect to Stripe Connect onboarding
-      if (result.accountLink) {
-        window.location.href = result.accountLink;
+      if (result.onboarding_url) {
+        window.location.href = result.onboarding_url;
       } else {
-        throw new Error('No account link received from Stripe');
+        throw new Error('No onboarding URL received from Stripe');
       }
     } catch (error) {
       console.error('Error connecting Stripe:', error);

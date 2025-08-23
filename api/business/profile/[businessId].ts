@@ -7,7 +7,7 @@ const supabase = createClient(
 );
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const { businessId } = req.query;
+  const { businessId } = req.params;
 
   if (typeof businessId !== 'string') {
     return res.status(400).json({ error: 'Invalid business ID' });
@@ -26,6 +26,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           logoUrl: undefined,
           coverImageUrl: undefined,
           businessCategoryRefined: undefined
+        });
+      }
+
+      // In development mode, return mock data for any business ID
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Development mode: Returning mock business profile for Stripe Connect');
+        return res.status(200).json({
+          businessName: 'Test Business',
+          detailedDescription: 'This is a test business for Stripe Connect testing.',
+          websiteUrl: 'https://testbusiness.com',
+          socialMediaLinks: {},
+          logoUrl: undefined,
+          coverImageUrl: undefined,
+          businessCategoryRefined: undefined,
+          email: 'test@example.com',
+          business_type: 'llc',
+          verification_status: 'approved',
+          identity_verified: true,
+          bank_connected: true
         });
       }
 

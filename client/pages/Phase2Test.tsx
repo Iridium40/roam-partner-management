@@ -288,21 +288,56 @@ export default function Phase2Test() {
             onComplete={() => handleStepComplete("final_review")}
             onBack={handleBack}
             initialData={{
-              services: [
+              business_services: [],
+              business_addons: [],
+              eligible_services: [
                 {
                   id: "1",
                   name: "Deep Cleaning",
                   description: "Comprehensive cleaning service",
-                  basePrice: 150,
-                  duration: 120,
-                  category: "cleaning",
-                  isActive: true,
+                  min_price: 150,
+                  duration_minutes: 120,
+                  is_active: true,
+                  subcategory_id: "cleaning",
+                  service_subcategories: {
+                    service_subcategory_type: "cleaning"
+                  }
+                },
+                {
+                  id: "2",
+                  name: "Regular Maintenance",
+                  description: "Standard maintenance service",
+                  min_price: 100,
+                  duration_minutes: 60,
+                  is_active: true,
+                  subcategory_id: "maintenance",
+                  service_subcategories: {
+                    service_subcategory_type: "maintenance"
+                  }
                 }
               ],
+              eligible_addons: [
+                {
+                  id: "1",
+                  name: "Express Service",
+                  description: "Faster service delivery",
+                  is_active: true
+                },
+                {
+                  id: "2",
+                  name: "Premium Materials",
+                  description: "High-quality materials upgrade",
+                  is_active: true
+                }
+              ],
+              service_addon_map: {
+                "1": ["1", "2"],
+                "2": ["1"]
+              },
               pricingModel: 'fixed',
               currency: 'USD',
               taxRate: 8.5,
-              cancellationPolicy: '24-hour notice required',
+              cancellationPolicy: 'By using our platform, you agree to our cancellation policy. For details, visit our Terms of Service.',
             }}
           />
         );
